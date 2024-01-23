@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+import json
+import ssl
+import socket
+import argparse
+import random
+
+
+
+def create_tcp_socket(hostname, port):
+    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_sock.connect((hostname, port))
+    return tcp_sock
+
+
+def create_tls_socket(hostname):
+    port = 27994
+    tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_sock.connect((hostname, port))
+    context = ssl.create_default_context()
+    tls_sock = context.wrap_socket(tcp_sock, server_hostname=hostname)
+    return tls_sock
+
+def main():
+
+    parser = argparse.ArgumentParser(description='Wordle client')
+    parser.add_argument('hostname', help='Server hostname')
+    parser.add_argument('username', help='Northeastern username')
+    parser.add_argument('-p', type=int, default=27993, help='Port number')
+    parser.add_argument('-s', action='store_true', help='Use TLS encryption')
+    args = parser.parse_args()
+
+    if args.s:
+        print("before")
+        tls_sock = create_tls_socket(args.hostname)
+        print("after")
+    else:
+        print("before")
+        tls_sock = create_tcp_socket(args.hostname, args.p)
+        print("after")
+
+    hello = '{"type": "hello", "northeastern_username": "chang.jonah"}\n'
+    f = open('project1-words.txt', 'r')
+    contents = f.read()
+    f.close()
+    listed = contents.split("\n")
+
+    encoded = hello.encode()
+    tls_sock.send(encoded)
+    output = tls_sock.recv(1024).decode()
+    response = json.loads(output)
+    guessed = get_word(listed, response)
+
+    first_guess(guessed, tls_sock, listed)
+
+
+def first_guess(guessed, sock, listed):
+    encoded = guessed.encode()
+    sock.send(encoded)
+    output = sock.recv(1024).decode()
+    response = json.loads(output)
+    guess(response, sock, listed)
+
+
+def get_word(listed, response):
+    my_id = response.get('id')
+    word = listed[random.randint(0, len(listed) - 1)]
+    guessed = '{"type": "guess", "id": "' + my_id + '", "word":' + ' "' + word + '"}\n'
+    return guessed
+
+
+def send_message(message, sock, listed):
+    encoded = message.encode()
+    sock.send(encoded)
+    receive(sock, listed)
+
+
+def receive(sock, listed):
+    output = sock.recv(1024).decode()
+    response = json.loads(output)
+    guess(response, sock, listed)
+
+
+def guess(response, sock, listed):
+    my_id = response.get('id')
+    word = listed[random.randint(0, len(listed) - 1)]
+    guessed = '{"type": "guess", "id": "' + my_id + '", "word":' + ' "' + word + '"}\n'
+    if 'flag' in response.keys():
+        print(response.get('flag'))
+    else:
+        while not ('flag' in response.keys()):
+            dict_list = response.get('guesses')
+            for dicts in dict_list:
+                marks = dicts.get('marks')
+                for x in range(0, 5):
+                    if marks[x] == 0 or marks[x] == 1:
+                        for words in listed:
+                            if words[x] == dicts.get('word')[x]:
+                                listed.remove(words)
+            send_message(guessed, sock, listed)
+
+
+if __name__ == '__main__':
+    main()
