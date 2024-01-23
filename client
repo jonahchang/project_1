@@ -6,13 +6,13 @@ import argparse
 import random
 
 
-
+# Create a tcp (non-encrypted) socket and connect it to the host and port.
 def create_tcp_socket(hostname, port):
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((hostname, port))
     return tcp_sock
 
-
+# Create a tls (encrypted) socket and connect it to the host and different port.
 def create_tls_socket(hostname):
     port = 27994
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -21,6 +21,8 @@ def create_tls_socket(hostname):
     tls_sock = context.wrap_socket(tcp_sock, server_hostname=hostname)
     return tls_sock
 
+# Main function used to parse the command line arguments, as well as get started with the "hello"
+# message and the first guess
 def main():
 
     parser = argparse.ArgumentParser(description='Wordle client')
@@ -54,6 +56,7 @@ def main():
     first_guess(guessed, tls_sock, listed)
 
 
+# First guess function that encodes, sends, and decodes the message, then starts the loop to keep guessing subsequent words.
 def first_guess(guessed, sock, listed):
     encoded = guessed.encode()
     sock.send(encoded)
@@ -62,6 +65,7 @@ def first_guess(guessed, sock, listed):
     guess(response, sock, listed)
 
 
+# Function used to get the unique ID as well as a new word to guess, but only for the first guess.
 def get_word(listed, response):
     my_id = response.get('id')
     word = listed[random.randint(0, len(listed) - 1)]
@@ -69,18 +73,21 @@ def get_word(listed, response):
     return guessed
 
 
+# Function for sending messages to the server.
 def send_message(message, sock, listed):
     encoded = message.encode()
     sock.send(encoded)
     receive(sock, listed)
 
 
+#Function for receiving messages from the server, and then directing to the next guess.
 def receive(sock, listed):
     output = sock.recv(1024).decode()
     response = json.loads(output)
     guess(response, sock, listed)
 
 
+# Function used to generate a guess, as well as loop the code and eliminate any words that don't work given the hints from the server.
 def guess(response, sock, listed):
     my_id = response.get('id')
     word = listed[random.randint(0, len(listed) - 1)]
