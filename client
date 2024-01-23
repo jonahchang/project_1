@@ -35,13 +35,9 @@ def main():
     args = parser.parse_args()
 
     if args.s:
-        print("before")
         tls_sock = create_tls_socket(args.hostname)
-        print("after")
     else:
-        print("before")
         tls_sock = create_tcp_socket(args.hostname, args.p)
-        print("after")
 
     hello = '{"type": "hello", "northeastern_username": "chang.jonah"}\n'
     f = open('project1-words.txt', 'r')
