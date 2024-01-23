@@ -8,15 +8,13 @@ import sys
 
 
 # Create a tcp (non-encrypted) socket and connect it to the host and port
-def create_tcp_socket(port):
-    hostname = 'proj1.3700.network'
+def create_tcp_socket(hostname, port):
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((hostname, port))
     return tcp_sock
 
 # Create a tls (encrypted) socket and connect it to the host and different port.
-def create_tls_socket():
-    hostname = 'proj1.3700.network'
+def create_tls_socket(hostname):
     port = 27994
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((hostname, port))
@@ -37,11 +35,11 @@ def main():
     args = parser.parse_args()
 
     if args.s:
-        tls_sock = create_tls_socket()
+        tls_sock = create_tls_socket(args.hostname)
     else:
-        tls_sock = create_tcp_socket(args.p)
+        tls_sock = create_tcp_socket(args.hostname, args.p)
 
-    hello = '{"type": "hello", "northeastern_username": "chang.jonah"}\n'
+    hello = '{"type": "hello", "northeastern_username": ' + args.username + '}\n'
     f = open('project1-words.txt', 'r')
     contents = f.read()
     f.close()
