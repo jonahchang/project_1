@@ -8,13 +8,15 @@ import sys
 
 
 # Create a tcp (non-encrypted) socket and connect it to the host and port
-def create_tcp_socket(hostname, port):
+def create_tcp_socket(port):
+    hostname = 'proj1.3700.network'
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((hostname, port))
     return tcp_sock
 
 # Create a tls (encrypted) socket and connect it to the host and different port.
-def create_tls_socket(hostname):
+def create_tls_socket():
+    hostname = 'proj1.3700.network'
     port = 27994
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_sock.connect((hostname, port))
@@ -35,9 +37,9 @@ def main():
     args = parser.parse_args()
 
     if args.s:
-        tls_sock = create_tls_socket(args.hostname)
+        tls_sock = create_tls_socket()
     else:
-        tls_sock = create_tcp_socket(args.hostname, args.p)
+        tls_sock = create_tcp_socket(args.p)
 
     hello = '{"type": "hello", "northeastern_username": "chang.jonah"}\n'
     f = open('project1-words.txt', 'r')
@@ -94,7 +96,7 @@ def guess(response, sock, listed):
     word = listed[random.randint(0, len(listed) - 1)]
     guessed = '{"type": "guess", "id": "' + my_id + '", "word":' + ' "' + word + '"}\n'
     if 'flag' in response.keys():
-        print(response.get('flag'))
+        print(str(response.get('flag')))
         sys.exit(0)
     else:
         while not ('flag' in response.keys()):
