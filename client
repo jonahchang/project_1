@@ -106,7 +106,6 @@ def send_message(message, sock, listed):
 def receive(sock, listed):
     try:
         output = sock.recv(1024).decode()
-        print(f"Received data: {output}")
         validate_json(output)
         response = json.loads(output)
         guess(response, sock, listed)
@@ -133,9 +132,6 @@ def validate_json(data):
         if not all(key in guess for key in expected_marks_keys):
             print(f"Error: Missing keys in guess.")
             sys.exit(1)
-
-    print("JSON validation successful.")
-
 
 
 # Function used to generate a guess, as well as loop the code and
