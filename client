@@ -106,6 +106,8 @@ def send_message(message, sock, listed):
 def receive(sock, listed):
     try:
         output = sock.recv(1024).decode()
+        print(f"Received data: {output}")
+        validate_json(output)
         response = json.loads(output)
         guess(response, sock, listed)
     except json.JSONDecodeError as e:
@@ -114,6 +116,26 @@ def receive(sock, listed):
     except socket.error as e:
         print(f"Error receiving response: {e}")
         sys.exit(1)
+
+
+# Validates the JSON data to ensure that it is in the proper format to interpret
+def validate_json(data):
+    expected_keys = ["type", "id", "guesses"]
+    expected_marks_keys = ["word", "marks"]
+
+    response = json.loads(data)
+    if not all(key in response for key in expected_keys):
+        print(f"Error: Missing keys in JSON response.")
+        sys.exit(1)
+
+    guesses = response.get("guesses", [])
+    for guess in guesses:
+        if not all(key in guess for key in expected_marks_keys):
+            print(f"Error: Missing keys in guess.")
+            sys.exit(1)
+
+    print("JSON validation successful.")
+
 
 
 # Function used to generate a guess, as well as loop the code and
