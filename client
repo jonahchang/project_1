@@ -104,9 +104,16 @@ def send_message(message, sock, listed):
 
 # Function for receiving messages from the server, and then directing to the next guess.
 def receive(sock, listed):
-    output = sock.recv(1024).decode()
-    response = json.loads(output)
-    guess(response, sock, listed)
+    try:
+        output = sock.recv(1024).decode()
+        response = json.loads(output)
+        guess(response, sock, listed)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        sys.exit(1)
+    except socket.error as e:
+        print(f"Error receiving response: {e}")
+        sys.exit(1)
 
 
 # Function used to generate a guess, as well as loop the code and
