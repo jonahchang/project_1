@@ -7,26 +7,33 @@ import random
 import sys
 
 
-# Create a tcp (non-encrypted) socket and connect it to the host and port
 def create_tcp_socket(hostname, port):
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_sock.connect((hostname, port))
-    return tcp_sock
+    try:
+        tcp_sock.connect((hostname, port))
+        return tcp_sock
+    except socket.error as e:
+        print(f"Error connecting to {hostname}: {e}")
+        sys.exit(1)
 
-# Create a tls (encrypted) socket and connect it to the host and different port.
+
 def create_tls_socket(hostname):
     port = 27994
     tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_sock.connect((hostname, port))
-    context = ssl.create_default_context()
-    tls_sock = context.wrap_socket(tcp_sock, server_hostname=hostname)
-    return tls_sock
+    try:
+        tcp_sock.connect((hostname, port))
+        context = ssl.create_default_context()
+        tls_sock = context.wrap_socket(tcp_sock, server_hostname=hostname)
+        return tls_sock
+    except ssl.SSLError as e:
+        print(f"SSL Error: {e}")
+        sys.exit(1)
+    except socket.error as e:
+        print(f"Error connecting to {hostname}: {e}")
+        sys.exit(1)
 
 
-# Main function used to parse the command line arguments, as well as get started with the "hello"
-# message and the first guess.
 def main():
-
     parser = argparse.ArgumentParser(description='Wordle client')
     parser.add_argument('hostname', help='Server hostname')
     parser.add_argument('username', help='Northeastern username')
@@ -37,21 +44,36 @@ def main():
     if args.s:
         tls_sock = create_tls_socket(args.hostname)
     else:
-        tls_sock = create_tcp_socket(args.hostname, args.p)
+        tcp_sock = create_tcp_socket(args.hostname, args.p)
 
-    hello = '{"type": "hello", "northeastern_username": ' + args.username + '}\n'
+    hello = '{"type": "hello", "northeastern_username": "' + args.username + '"}\n'
     f = open('project1-words.txt', 'r')
     contents = f.read()
     f.close()
     listed = contents.split("\n")
 
     encoded = hello.encode()
-    tls_sock.send(encoded)
-    output = tls_sock.recv(1024).decode()
+    try:
+        if args.s:
+            tls_sock.send(encoded)
+        else:
+            tcp_sock.send(encoded)
+    except socket.error as e:
+        print(f"Error sending hello message: {e}")
+        sys.exit(1)
+
+    try:
+        if args.s:
+            output = tls_sock.recv(1024).decode()
+        else:
+            output = tcp_sock.recv(1024).decode()
+    except socket.error as e:
+        print(f"Error receiving response: {e}")
+        sys.exit(1)
+
     response = json.loads(output)
     guessed = get_word(listed, response)
-
-    first_guess(guessed, tls_sock, listed)
+    first_guess(guessed, tls_sock if args.s else tcp_sock, listed)
 
 
 # First guess function that encodes, sends, and decodes the message,
@@ -80,7 +102,7 @@ def send_message(message, sock, listed):
     receive(sock, listed)
 
 
-#Function for receiving messages from the server, and then directing to the next guess.
+# Function for receiving messages from the server, and then directing to the next guess.
 def receive(sock, listed):
     output = sock.recv(1024).decode()
     response = json.loads(output)
