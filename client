@@ -119,13 +119,9 @@ def receive(sock, listed):
 
 # Validates the JSON data to ensure that it is in the proper format to interpret
 def validate_json(data):
-    expected_keys = ["type", "id", "guesses"]
     expected_marks_keys = ["word", "marks"]
 
     response = json.loads(data)
-    if not all(key in response for key in expected_keys):
-        print(f"Error: Missing keys in JSON response.")
-        sys.exit(1)
 
     guesses = response.get("guesses", [])
     for guess in guesses:
